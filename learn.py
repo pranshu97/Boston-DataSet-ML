@@ -2,32 +2,39 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-#for nox prediction
-dataset = pd.read_csv('Boston.csv')
-X1= dataset.iloc[:,1:5].values
-X2=  dataset.iloc[:,6:].values
-X = np.concatenate((X1,X2),axis=1)
-y = dataset.iloc[:,5].values
-#for price prediction
-'''
-dataset = pd.read_csv('Boston.csv')
-X = dataset.iloc[:,1:-1].values
-y = dataset.iloc[:,-1].values
-'''
+#Reading Data
+data = pd.read_csv('Boston.csv')
+X1 = data.iloc[:,1:5]
+X2 = data.iloc[:,6:14]
+X = pd.concat([X1,X2],axis=1)
+y = pd.DataFrame(data.iloc[:,14])
 
-from sklearn.preprocessing import StandardScaler
-sc_X = StandardScaler()
-X = sc_X.fit_transform(X)
+#Data Preprocessing
+from sklearn import preprocessing
+X = preprocessing.normalize(X)
 
+#Splitting Data
 from sklearn.model_selection import train_test_split
-X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.2)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.1)
 
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-poly_reg = PolynomialFeatures(degree =3)
-X_poly = poly_reg.fit_transform(X)
-poly_reg.fit(X_poly, y)
-lin_reg_2 = LinearRegression()
-lin_reg_2.fit(X_poly, y)
 
-y_pred = lin_reg_2.predict(poly_reg.fit_transform(X_test))
+import keras
+from keras.models import Sequential
+from keras.layers import Dense
+
+# Neural Network
+classifier = Sequential()
+
+classifier.add(Dense(output_dim = 512, init = 'normal', activation = 'relu', input_dim = 12))
+classifier.add(Dense(output_dim = 128, init = 'normal', activation = 'relu'))
+classifier.add(Dense(output_dim = 1, init = 'normal', activation = 'linear'))
+
+classifier.compile(optimizer = 'adam', loss = 'mse') 
+
+classifier.fit(X_train, y_train, batch_size = 5, nb_epoch = 100)
+
+y_pred1 = classifier.predict(X_test)
+
+from sklearn import metrics
+metrics.mean_absolute_error(y_test, y_pred1)
+metrics.explained_variance_score(y_test, y_pred1)
